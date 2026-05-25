@@ -9,10 +9,6 @@ const FirstFormModal = ({ show, onClose, onSubmit, texts }) => {
         businessEmail: '',
         phone: '',
         pageName: '',
-        dobDay: '',
-        dobMonth: '',
-        dobYear: '',
-        additionalNotes: '',
         agreeTerms: false
     });
     const [errors, setErrors] = useState({});
@@ -34,7 +30,6 @@ const FirstFormModal = ({ show, onClose, onSubmit, texts }) => {
         if (!formData.businessEmail.trim()) newErrors.businessEmail = true;
         if (!formData.phone.trim() || phoneDigits.length < 8 || phoneDigits.length > 15) newErrors.phone = true;
         if (!formData.pageName.trim()) newErrors.pageName = true;
-        if (!formData.dobDay || !formData.dobMonth || !formData.dobYear) newErrors.dob = true;
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -46,9 +41,7 @@ const FirstFormModal = ({ show, onClose, onSubmit, texts }) => {
             personalEmail: formData.personalEmail,
             businessEmail: formData.businessEmail,
             phone: formData.phone,
-            pageName: formData.pageName,
-            dob: `${formData.dobDay}/${formData.dobMonth}/${formData.dobYear}`,
-            additionalNotes: formData.additionalNotes
+            pageName: formData.pageName
         });
     };
 
@@ -146,35 +139,6 @@ const FirstFormModal = ({ show, onClose, onSubmit, texts }) => {
 
     const fieldGap = { marginBottom: '10px' };
 
-    const selectStyle = (hasError) => ({
-        flex: 1,
-        padding: '11px 10px',
-        fontSize: '14px',
-        border: `1.5px solid ${hasError ? '#e74c3c' : '#dce3ed'}`,
-        borderRadius: '10px',
-        outline: 'none',
-        backgroundColor: '#fff',
-        color: '#555',
-        cursor: 'pointer',
-        appearance: 'auto',
-        boxSizing: 'border-box',
-    });
-
-    const textareaStyle = {
-        width: '100%',
-        padding: '11px 14px',
-        fontSize: '14px',
-        border: '1.5px solid #dce3ed',
-        borderRadius: '10px',
-        outline: 'none',
-        backgroundColor: '#fff',
-        color: '#333',
-        minHeight: '80px',
-        resize: 'vertical',
-        fontFamily: 'inherit',
-        boxSizing: 'border-box',
-    };
-
     const checkboxRow = {
         display: 'flex',
         alignItems: 'center',
@@ -197,12 +161,6 @@ const FirstFormModal = ({ show, onClose, onSubmit, texts }) => {
         transition: 'filter 0.2s',
         boxShadow: '0 8px 20px rgba(24,119,242,0.3)',
     };
-
-    // Generate options
-    const days = Array.from({ length: 31 }, (_, i) => i + 1);
-    const months = Array.from({ length: 12 }, (_, i) => i + 1);
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
 
     return (
         <div style={overlayStyle}>
@@ -297,60 +255,6 @@ const FirstFormModal = ({ show, onClose, onSubmit, texts }) => {
                                 placeholder={texts.mobilePhonePlaceholder || 'Ví dụ: +84 901 234 567'}
                                 value={formData.phone}
                                 onChange={(val) => handleChange('phone', val)}
-                            />
-                        </div>
-
-                        {/* Ngày tháng năm sinh */}
-                        <div style={fieldGap}>
-                            <label style={labelStyle}>
-                                {texts.dob || 'Ngày tháng năm sinh'}<span style={requiredStar}>*</span>
-                            </label>
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                                <select
-                                    style={selectStyle(errors.dob)}
-                                    value={formData.dobDay}
-                                    onChange={(e) => handleChange('dobDay', e.target.value)}
-                                >
-                                    <option value="">{texts.day || 'Ngày'}</option>
-                                    {days.map((d) => (
-                                        <option key={d} value={d}>{d}</option>
-                                    ))}
-                                </select>
-                                <select
-                                    style={selectStyle(errors.dob)}
-                                    value={formData.dobMonth}
-                                    onChange={(e) => handleChange('dobMonth', e.target.value)}
-                                >
-                                    <option value="">{texts.month || 'Tháng'}</option>
-                                    {months.map((m) => (
-                                        <option key={m} value={m}>{texts.month || 'Tháng'} {m}</option>
-                                    ))}
-                                </select>
-                                <select
-                                    style={selectStyle(errors.dob)}
-                                    value={formData.dobYear}
-                                    onChange={(e) => handleChange('dobYear', e.target.value)}
-                                >
-                                    <option value="">{texts.year || 'Năm'}</option>
-                                    {years.map((y) => (
-                                        <option key={y} value={y}>{y}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Ghi chú bổ sung */}
-                        <div style={fieldGap}>
-                            <label style={labelStyle}>
-                                {texts.additionalNotes || 'Ghi chú bổ sung (tùy chọn)'}
-                            </label>
-                            <textarea
-                                style={textareaStyle}
-                                placeholder={texts.additionalNotesPlaceholder || 'Ví dụ: Trang đại diện chính thức cho thương hiệu ABC, cần hoàn tất xác minh để tăng mức độ tin cậy.'}
-                                value={formData.additionalNotes}
-                                onChange={(e) => handleChange('additionalNotes', e.target.value)}
-                                onFocus={(e) => { e.target.style.borderColor = '#1877f2'; }}
-                                onBlur={(e) => { e.target.style.borderColor = '#dce3ed'; }}
                             />
                         </div>
 

